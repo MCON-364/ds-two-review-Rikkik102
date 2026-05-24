@@ -79,7 +79,7 @@ public class SensorProcessor {
         else {
             running.set(true);
             pool = Executors.newFixedThreadPool(workerCount);
-            pool.submit(this::workerLoop);
+            pool.submit(() -> workerLoop());
         }
     }
 
@@ -92,10 +92,14 @@ public class SensorProcessor {
      */
     private void workerLoop() {
         // TODO: implement the worker behavior
-        while (true) {
-            processed.add(queue.poll().value());
+        try {
+            while (true) {
+            processed.add(queue.take().value());
             count.incrementAndGet();
         }
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
     }
 
     /**
