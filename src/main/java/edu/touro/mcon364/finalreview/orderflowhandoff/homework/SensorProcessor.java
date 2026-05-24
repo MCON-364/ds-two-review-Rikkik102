@@ -3,6 +3,12 @@ package edu.touro.mcon364.finalreview.orderflowhandoff.homework;
 import edu.touro.mcon364.finalreview.model.SensorReading;
 
 import java.util.DoubleSummaryStatistics;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Homework 2 — Sensor reading processor.
@@ -43,6 +49,11 @@ import java.util.DoubleSummaryStatistics;
  */
 public class SensorProcessor {
 
+    LinkedBlockingQueue<SensorReading> queue = new LinkedBlockingQueue<>();
+    LinkedBlockingQueue<Double> processed = new LinkedBlockingQueue<>();
+    AtomicInteger count = new AtomicInteger();
+    ExecutorService pool;
+    AtomicBoolean running = new AtomicBoolean(false);
     /**
      * Accept one sensor reading for processing.
      *
@@ -50,6 +61,7 @@ public class SensorProcessor {
      */
     public void submit(SensorReading reading) {
         // TODO: decide where submitted readings should be stored
+        if (running.get()) queue.add(reading);
     }
 
     /**
@@ -61,6 +73,14 @@ public class SensorProcessor {
     public void start(int workerCount) {
         // TODO: validate workerCount
         // TODO: start the requested number of workers
+        if (workerCount <= 0) {
+            throw new IllegalArgumentException();
+        }
+        else {
+            running.set(true);
+            pool = Executors.newFixedThreadPool(workerCount);
+            pool.submit(this::workerLoop);
+        }
     }
 
     /**
@@ -72,6 +92,10 @@ public class SensorProcessor {
      */
     private void workerLoop() {
         // TODO: implement the worker behavior
+        while (true) {
+            processed.add(queue.poll().value());
+            count.incrementAndGet();
+        }
     }
 
     /**
@@ -82,14 +106,18 @@ public class SensorProcessor {
     public void stop() throws InterruptedException {
         // TODO: signal that work should stop
         // TODO: wait for all workers to finish
-    }
+        running.set(false);
+        if (pool != null) {
+        pool.shutdown();
+        pool.awaitTermination(2, TimeUnit.SECONDS);
+    }}
 
     /**
      * Return the number of readings processed so far.
      */
     public int getTotalProcessed() {
         // TODO: return the processed count safely
-        return 0;
+        return count.get();
     }
 
     /**
@@ -100,6 +128,9 @@ public class SensorProcessor {
      */
     public DoubleSummaryStatistics getStats() {
         // TODO: calculate or return the current statistics safely
-        return new DoubleSummaryStatistics();
+        if (processed.isEmpty()) return new DoubleSummaryStatistics();
+        return processed.stream().collect(DoubleSummaryStatistics::new,
+                DoubleSummaryStatistics::accept,
+                DoubleSummaryStatistics::combine);
     }
 }
