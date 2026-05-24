@@ -3,6 +3,7 @@ package edu.touro.mcon364.finalreview.orderflowhandoff.homework;
 import edu.touro.mcon364.finalreview.model.PrintJob;
 
 import java.util.Optional;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Homework 1 — PrintQueue.
@@ -39,7 +40,7 @@ import java.util.Optional;
 public class PrintQueue {
 
     // TODO: choose the field or fields needed to remember waiting print jobs
-
+    LinkedBlockingQueue<PrintJob> queue = new LinkedBlockingQueue<>();
     /**
      * Records a new print job as waiting.
      *
@@ -47,6 +48,7 @@ public class PrintQueue {
      */
     public void submit(PrintJob job) {
         // TODO: implement
+        queue.add(job);
     }
 
     /**
@@ -56,7 +58,8 @@ public class PrintQueue {
      */
     public Optional<PrintJob> printNext() {
         // TODO: implement
-        return Optional.empty();
+        if (queue.isEmpty()) return Optional.empty();
+        else return Optional.of(queue.poll());
     }
 
     /**
@@ -66,7 +69,8 @@ public class PrintQueue {
      */
     public Optional<PrintJob> peekNext() {
         // TODO: implement
-        return Optional.empty();
+        if (queue.isEmpty()) return Optional.empty();
+        else return Optional.of(queue.peek());
     }
 
     /**
@@ -74,6 +78,6 @@ public class PrintQueue {
      */
     public int queuedJobs() {
         // TODO: implement
-        return 0;
+        return queue.size();
     }
 }
